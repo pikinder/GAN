@@ -38,14 +38,10 @@ class GAN(object):
             scope.reuse_variables()
             self._y_data = self._create_discriminator(self._x_data)
 
-        with tf.name_scope('training'):
-            with tf.name_scope('losses'):
-                self._loss_disc, self._loss_gen = self._create_losses()
+        with tf.name_scope('optimisation'):
+            self._loss_disc, self._loss_gen = self._create_losses()
+            self._train_disc, self._train_gen = self._create_training_operations()
 
-            with tf.name_scope('ops'):
-                self._train_disc, self._train_gen = self._create_training_operations()
-
-        #with tf.name_scope('summary'):
         self._create_summaries()
 
     def _create_summaries(self):
@@ -98,14 +94,14 @@ class GAN(object):
         loss_disc_gan = ce(logits=self._y_gan, labels=tf.constant(self._LABEL_GAN * ones), name='ce_disc_gan')
         loss_gen = ce(logits=self._y_gan, labels=tf.constant(self._LABEL_DATA * ones), name='ce_gan')
 
-        return loss_disc_data + loss_disc_gan, loss_gen
+        return tf.add(loss_disc_data, loss_disc_gan,'ce_disc'), loss_gen
 
     def _create_training_operations(self):
         """
 
         :return:
         """
-        variables = tf.global_variables()
+        variables = tf.trainable_variables()
         generator_variables = [v for v in variables if v.name.startswith('generator/')]
         discriminator_variables = [v for v in variables if v.name.startswith('discriminator/')]
 
